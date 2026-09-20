@@ -1,10 +1,19 @@
+"""
+vision_test.py -- Azure AI Vision Integration Test
+
+Standalone script to verify Azure API connectivity by sending a test image
+and printing the extracted tags and OCR text.
+"""
+
 import os
 from dotenv import load_dotenv
 from azure.ai.vision.imageanalysis import ImageAnalysisClient
 from azure.ai.vision.imageanalysis.models import VisualFeatures
 from azure.core.credentials import AzureKeyCredential
 
-load_dotenv()
+from src import ENV_PATH, MEDIA_DIR
+
+load_dotenv(dotenv_path=ENV_PATH)
 
 # Load credentials from .env
 endpoint = os.getenv("AZURE_VISION_ENDPOINT")
@@ -14,7 +23,7 @@ key = os.getenv("AZURE_VISION_KEY")
 client = ImageAnalysisClient(endpoint, AzureKeyCredential(key))
 
 # Load your test image
-image_path = "test.png"
+image_path = os.path.join(MEDIA_DIR, "test.png")
 with open(image_path, "rb") as f:
     image_data = f.read()
 
