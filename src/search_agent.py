@@ -5,9 +5,39 @@ Connects to the local ChromaDB vector store and performs semantic similarity
 queries against indexed image data using the same all-MiniLM-L6-v2 model.
 """
 
+import os
 import chromadb
 from chromadb.utils import embedding_functions
-from src import DB_DIR
+from dotenv import load_dotenv
+from openai import OpenAI
+from azure.identity import InteractiveBrowserCredential, get_bearer_token_provider
+from src import DB_DIR, ENV_PATH, MEDIA_DIR
+
+load_dotenv(dotenv_path=ENV_PATH)
+
+# ---------------------------------------------------------------------------
+# LLM Initialization
+# ---------------------------------------------------------------------------
+
+USE_AZURE = bool(os.getenv("AZURE_OPENAI_ENDPOINT"))
+
+if USE_AZURE:
+    endpoint = os.getenv("AZURE_OPENAI_ENDPOINT", "").rstrip("/")
+    token_provider = get_bearer_token_provider(InteractiveBrowserCredential(), "https://ai.azure.com/.default")
+    
+    llm_client = OpenAI(
+        base_url=f"{endpoint}/openai/v1/",
+        api_key=token_provider
+    )
+    llm_model = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o-mini")
+elif os.getenv("OPENAI_API_KEY"):
+    llm_client = OpenAI(
+        api_key=os.getenv("OPENAI_API_KEY")
+    )
+    llm_model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+else:
+    llm_client = None
+    llm_model = None
 
 # ---------------------------------------------------------------------------
 # ChromaDB connection -- must mirror pipeline.py settings exactly
@@ -32,7 +62,7 @@ _collection = _chroma_client.get_or_create_collection(
 # Semantic search
 # ---------------------------------------------------------------------------
 
-def search_images(query: str, top_k: int = 1) -> list[dict]:
+def search_images(query: str, top_k: int = 1, source_filter: str = None) -> list[dict]:
     """Query the vector database with a natural language string.
 
     Parameters
@@ -41,6 +71,9 @@ def search_images(query: str, top_k: int = 1) -> list[dict]:
         Natural language search query.
     top_k : int
         Number of results to return (default 1).
+    source_filter : str, optional
+        If provided, only return results whose source_file metadata
+        ends with this filename (e.g. 'test.png').
 
     Returns
     -------
@@ -55,10 +88,16 @@ def search_images(query: str, top_k: int = 1) -> list[dict]:
         print("[search_agent] The vector database is empty. Run pipeline.py first.")
         return []
 
-    results = _collection.query(
-        query_texts=[query],
-        n_results=min(top_k, _collection.count()),
-    )
+    query_kwargs = {
+        "query_texts": [query],
+        "n_results": min(top_k, _collection.count()),
+    }
+
+    if source_filter:
+        full_path = os.path.join(MEDIA_DIR, source_filter)
+        query_kwargs["where"] = {"source_file": full_path}
+
+    results = _collection.query(**query_kwargs)
 
     matches: list[dict] = []
     for i in range(len(results["ids"][0])):
@@ -78,6 +117,71 @@ def search_images(query: str, top_k: int = 1) -> list[dict]:
 
     return matches
 
+
+# ---------------------------------------------------------------------------
+# Generative LLM Response
+# ---------------------------------------------------------------------------
+
+def generate_answer(query: str, search_results: list[dict]) -> str:
+    """Generate a conversational answer using the LLM based on retrieved context."""
+    if not USE_AZURE and not llm_client:
+        return "LLM client not configured. Please set AZURE_OPENAI_API_KEY or OPENAI_API_KEY in .env"
+    
+    if not search_results:
+        return "I couldn't find any relevant information to answer your question."
+
+    # Construct the context from the best matches
+    context = ""
+    for rank, match in enumerate(search_results, 1):
+        context += f"--- Source {rank}: {match['source_file']} ---\n"
+        context += f"{match['snippet']}\n\n"
+
+    system_prompt = "You are a Smart Media Analysis Agent. Answer the user's question using ONLY the provided OCR text and visual tags. Always state the source file you found the answer in."
+
+    user_prompt = f"Context:\n{context}\n\nUser Question:\n{query}"
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt}
+    ]
+
+    try:
+        response = llm_client.chat.completions.create(
+            model=llm_model,
+            messages=messages,
+            temperature=1
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Error generating answer: {e}"
+
+# ---------------------------------------------------------------------------
+# Full RAG Pipeline 
+# ---------------------------------------------------------------------------
+
+def query_pipeline(user_query: str, target_filename: str = None) -> dict:
+    """Executes the full RAG pipeline (search + generation) and returns a structured response."""
+    results = search_images(user_query, top_k=3, source_filter=target_filename)
+    
+    if not results:
+        return {
+            "answer": "I couldn't find any relevant information to answer your question.",
+            "source": "None",
+            "distance": None,
+            "ocr_context": "No documents matched the query."
+        }
+    
+    answer = generate_answer(user_query, results)
+    
+    ocr_context = ""
+    for rank, match in enumerate(results, 1):
+        ocr_context += f"--- Source {rank}: {match['source_file']} ---\n{match['snippet']}\n\n"
+        
+    return {
+        "answer": answer,
+        "source": results[0]['source_file'],
+        "distance": round(results[0]['distance'], 4) if results[0].get('distance') is not None else None,
+        "ocr_context": ocr_context.strip()
+    }
 
 # ---------------------------------------------------------------------------
 # Standalone interactive mode
@@ -109,9 +213,14 @@ if __name__ == "__main__":
             print("  No matches found.\n")
             continue
 
+        print("\n[search_agent] Generating answer...")
+        answer = generate_answer(query, results)
+        
+        print("\n=========================================")
+        print("Answer:")
+        print("=========================================")
+        print(answer)
+        print("\n--- Retrieved Sources ---")
         for rank, match in enumerate(results, 1):
-            print(f"\n--- Result #{rank} ---")
-            print(f"  Source : {match['source_file']}")
-            print(f"  Distance: {match['distance']:.4f}")
-            print(f"  Content :\n{match['snippet']}")
-        print()
+            print(f"  #{rank}: {match['source_file']} (Distance: {match['distance']:.4f})")
+        print("=========================================\n")

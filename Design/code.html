@@ -1,0 +1,548 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Azure AI Media RAG Studio</title>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "error": "#ffb4ab",
+            "background": "#0b1326",
+            "secondary": "#d2bbff",
+            "surface-container-lowest": "#060e20",
+            "on-tertiary-fixed-variant": "#005236",
+            "on-secondary-container": "#c9aeff",
+            "on-tertiary": "#003824",
+            "tertiary-fixed-dim": "#4edea3",
+            "on-background": "#dae2fd",
+            "surface-container-high": "#222a3d",
+            "on-secondary-fixed-variant": "#5a00c6",
+            "outline-variant": "#404752",
+            "on-tertiary-container": "#ffffff",
+            "on-error-container": "#ffdad6",
+            "primary-fixed-dim": "#a3c9ff",
+            "primary-container": "#0078d4",
+            "error-container": "#93000a",
+            "tertiary-container": "#00875d",
+            "surface-variant": "#2d3449",
+            "inverse-primary": "#0060ab",
+            "on-primary-container": "#ffffff",
+            "tertiary": "#4edea3",
+            "inverse-surface": "#dae2fd",
+            "surface-container": "#171f33",
+            "surface-dim": "#0b1326",
+            "primary-fixed": "#d3e3ff",
+            "on-primary": "#00315c",
+            "on-tertiary-fixed": "#002113",
+            "inverse-on-surface": "#283044",
+            "on-primary-fixed-variant": "#004883",
+            "surface-bright": "#31394d",
+            "surface-tint": "#a3c9ff",
+            "tertiary-fixed": "#6ffbbe",
+            "on-surface": "#dae2fd",
+            "secondary-fixed": "#eaddff",
+            "surface-container-highest": "#2d3449",
+            "secondary-fixed-dim": "#d2bbff",
+            "primary": "#a3c9ff",
+            "surface": "#0b1326",
+            "on-primary-fixed": "#001c39",
+            "on-secondary-fixed": "#25005a",
+            "on-secondary": "#3f008e",
+            "surface-container-low": "#131b2e",
+            "secondary-container": "#6001d1",
+            "on-surface-variant": "#c0c7d4",
+            "outline": "#8a919e",
+            "on-error": "#690005"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "margin-mobile": "1rem",
+            "gutter-lg": "1.5rem",
+            "space-md": "1rem",
+            "space-xs": "0.25rem",
+            "space-lg": "1.5rem",
+            "margin": "1.5rem",
+            "gutter": "1rem",
+            "space-sm": "0.5rem",
+            "space-xl": "2rem"
+          },
+          "fontFamily": {
+            "headline-sm": ["Inter"],
+            "body-sm": ["Inter"],
+            "headline-lg": ["Inter"],
+            "headline-xl": ["Inter"],
+            "body-md": ["Inter"],
+            "label-md": ["Inter"],
+            "body-lg": ["Inter"],
+            "label-sm": ["Inter"],
+            "headline-md": ["Inter"],
+            "code-sm": ["JetBrains Mono", "monospace"],
+            "label-lg": ["Inter"]
+          },
+          "fontSize": {
+            "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+            "headline-xl": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "600" }],
+            "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+            "code-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "500" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      font-size: 18px;
+      line-height: 1;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .material-symbols-fill {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+    /* Custom subtle scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b1326;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2d3449;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #404752;
+    }
+    .custom-gradient-glow {
+      box-shadow: 0 0 15px -2px rgba(0, 120, 212, 0.35);
+    }
+    .ai-badge-gradient {
+      background: linear-gradient(135deg, #0078d4 0%, #7c3aed 100%);
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md antialiased overflow-hidden select-none h-screen flex flex-col">
+<!-- ================= TOP NAVIGATION BAR (Shared Component: TopNavBar) ================= -->
+
+<!-- ================= THREE-COLUMN CORE LAYOUT ================= -->
+<main class="flex-1 flex overflow-hidden h-[calc(100vh-3.5rem)] h-screen">
+<!-- 1. LEFT SIDEBAR: Media & Data Ingestion (Shared Component Reflected: Ingestion Rail) -->
+<aside class="w-80 bg-surface-container-low border-r border-outline-variant flex flex-col justify-between shrink-0 h-full p-4 overflow-y-auto">
+<div class="space-y-4">
+<!-- Section Header -->
+<div class="flex items-center justify-between pb-2 border-b border-outline-variant/60">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="upload_file">upload_file</span>
+<span class="text-label-lg font-label-lg text-on-surface font-semibold">Media Ingestion</span>
+</div>
+<span class="text-label-sm font-label-sm font-code-sm px-2 py-0.5 rounded bg-surface-variant text-primary border border-outline-variant">v2.4</span>
+</div>
+<!-- Drag & Drop Zone -->
+<input type="file" id="imageUpload" accept="image/png, image/jpeg" style="display: none;">
+<div id="dropZone" class="group border border-dashed border-primary/50 hover:border-primary bg-surface-container/60 hover:bg-surface-container rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-105 transition-transform mb-2">
+<span id="uploadIcon" class="material-symbols-outlined text-xl" data-icon="cloud_upload">cloud_upload</span>
+</div>
+<p id="uploadLabel" class="text-label-md font-label-md text-on-surface font-medium">Ingest Media to ChromaDB</p>
+<p id="uploadSubLabel" class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">Drop PNG, JPG or click to browse</p>
+<div class="mt-3 inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant text-label-sm font-label-sm font-code-sm border border-outline-variant/50"><span class="material-symbols-outlined text-[13px] text-secondary" data-icon="hub">hub</span><span class="">sentence-transformers (Local)</span></div>
+</div>
+<!-- Ingest Batch CTA Button -->
+<button class="w-full py-2 px-3 bg-surface-variant hover:bg-surface-bright text-on-surface rounded-lg text-label-md font-label-md font-medium flex items-center justify-center gap-2 border border-outline-variant transition-colors">
+<span class="material-symbols-outlined text-primary" data-icon="add_circle">add_circle</span>
+<span class="">Ingest Batch</span>
+</button>
+<!-- Indexed Media List -->
+<div class="pt-2">
+<div class="flex items-center justify-between mb-2.5">
+<span id="indexedMediaCount" class="text-label-sm font-label-sm text-on-surface-variant tracking-wide font-medium">INDEXED MEDIA (0)</span>
+<button class="text-primary hover:underline text-label-sm font-label-sm flex items-center gap-0.5">
+<span class="">View All</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+<div id="indexedMediaList" class="space-y-1.5">
+</div>
+</div>
+</div>
+<!-- Bottom Status Indicator Box (Glassmorphic Card) -->
+<div class="mt-4 p-3 rounded-xl bg-surface-container/70 border border-outline-variant backdrop-blur-sm space-y-2">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<div class="flex items-center gap-2">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-tertiary"></span>
+</span>
+<span class="text-on-surface font-medium">Azure AI Foundry</span>
+</div>
+<span class="text-tertiary text-label-sm font-label-sm">Connected</span>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm border-t border-outline-variant/40 pt-1.5">
+<div class="flex items-center gap-2">
+<span class="relative flex h-2 w-2">
+<span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+</span>
+<span class="text-on-surface font-medium">ChromaDB Node</span>
+</div>
+<span class="text-primary font-code-sm text-label-sm font-label-sm">1,420 vectors</span>
+</div>
+</div>
+</aside>
+<!-- 2. CENTER COLUMN: Primary AI Copilot Chat Interface -->
+<section class="flex-1 bg-surface-container-lowest flex flex-col justify-between overflow-hidden relative">
+<!-- Chat Header -->
+<div class="h-14 px-6 border-b border-outline-variant bg-surface-container/40 flex items-center justify-between shrink-0"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-primary text-[20px]" data-icon="forum">forum</span><h2 class="text-headline-sm font-headline-sm text-on-surface">Media QA Assistant</h2></div></div>
+<!-- Scrollable Message Feed -->
+<div id="chatFeed" class="flex-1 overflow-y-auto p-6 space-y-6">
+</div>
+<!-- Bottom Pinned Chat Input Area -->
+<div class="p-4 border-t border-outline-variant bg-surface-container/50 backdrop-blur-md">
+<!-- Quick Prompt Chips -->
+<div class="flex items-center gap-2 mb-3 overflow-x-auto pb-1">
+<span class="text-label-sm font-label-sm text-on-surface-variant shrink-0 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="tips_and_updates">tips_and_updates</span>
+<span class="">Suggested:</span>
+</span>
+<button class="px-2.5 py-1 rounded-full bg-surface-variant/40 hover:bg-surface-variant border border-outline-variant text-label-sm font-label-sm text-on-surface shrink-0 transition-colors">
+            Summarize test.png
+          </button>
+<button class="px-2.5 py-1 rounded-full bg-surface-variant/40 hover:bg-surface-variant border border-outline-variant text-label-sm font-label-sm text-on-surface shrink-0 transition-colors">
+            Extract all table values
+          </button>
+<button class="px-2.5 py-1 rounded-full bg-surface-variant/40 hover:bg-surface-variant border border-outline-variant text-label-sm font-label-sm text-on-surface shrink-0 transition-colors">
+            Compare with dashboard_screenshot.jpg
+          </button>
+</div>
+<!-- Glassmorphic Command Input Bar -->
+<div class="relative bg-surface-container-high border border-outline-variant rounded-xl shadow-lg focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
+<div class="flex items-center px-3 py-2 gap-2">
+<!-- Media Attachment Action -->
+<button class="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/60 rounded-lg transition-colors" title="Attach Image or Document">
+<span class="material-symbols-outlined text-[20px]" data-icon="add">add</span>
+</button>
+<!-- Main Input Field -->
+<input id="chatInput" class="flex-1 bg-transparent border-0 text-on-surface placeholder:text-outline text-body-md font-body-md focus:ring-0 focus:outline-none px-2 py-1" placeholder="Ask a question about your media..." type="text" value="">
+<!-- Mic / Audio Input -->
+<button class="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/60 rounded-lg transition-colors" title="Voice Input">
+<span class="material-symbols-outlined text-[20px]" data-icon="mic">mic</span>
+</button>
+<!-- Submit Prompt Button (Azure Blue / Purple Gradient) -->
+<button id="sendButton" class="px-3 py-2 ai-badge-gradient hover:opacity-95 text-white rounded-lg flex items-center justify-center shadow-md transition-transform active:scale-95">
+<span class="material-symbols-outlined text-[18px]" data-icon="send">send</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. RIGHT SIDEBAR: RAG Retrieval & Vector Context -->
+<aside class="w-96 bg-surface-container-low border-l border-outline-variant flex flex-col shrink-0 h-full p-4 overflow-y-auto space-y-4">
+<!-- Section Header -->
+<div class="flex items-center justify-between pb-2 border-b border-outline-variant/60">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary" data-icon="analytics">analytics</span>
+<h3 class="text-label-lg font-label-lg text-on-surface font-semibold">Retrieval Diagnostics</h3>
+</div>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container/20 text-secondary text-label-sm font-label-sm font-code-sm border border-secondary-container/50">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+<span class="">Live Trace</span>
+</span>
+</div>
+<!-- Vector Similarity & Distance Card -->
+<div class="p-3.5 rounded-xl bg-surface-container border border-outline-variant space-y-3">
+<div class="flex items-center justify-between">
+<span id="topMatchText" class="text-label-md font-label-md text-on-surface font-medium truncate">Top Match: None</span>
+<span class="material-symbols-outlined text-outline text-[16px]" data-icon="verified_user">verified_user</span>
+</div>
+<div class="p-2.5 rounded-lg bg-surface-container-high border border-outline-variant/80"><span class="text-label-sm font-label-sm text-on-surface-variant block">L2 Distance</span><span id="l2Distance" class="text-headline-sm font-headline-sm font-code-sm text-primary font-bold">N/A</span></div>
+<div class="flex items-center justify-between text-label-sm font-label-sm font-code-sm text-on-surface-variant pt-1 border-t border-outline-variant/40">
+<span class="">Embedding Dim:</span>
+<span class="text-on-surface">1536 dim (Azure OpenAI)</span>
+</div>
+</div>
+<!-- Extracted Visual Tags -->
+<div class="p-3.5 rounded-xl bg-surface-container border border-outline-variant space-y-3"><div class="flex items-center justify-between"><span class="text-label-md font-label-md text-on-surface font-semibold flex items-center gap-1.5"><span class="material-symbols-outlined text-primary text-[16px]" data-icon="description">description</span><span class="">Retrieved OCR Context</span></span><span class="text-label-sm font-label-sm font-code-sm text-tertiary">CONF: 98.9%</span></div><div id="ocrContextBox" class="bg-surface-container-lowest p-3 rounded-lg border border-outline-variant font-code-sm text-[12px] leading-relaxed text-on-surface space-y-2 max-h-56 overflow-y-auto whitespace-pre-wrap"><p class="text-on-surface-variant">Waiting for query...</p></div></div>
+<!-- Semantic Search Results Card & OCR Visual Inspector -->
+<div class="p-3.5 rounded-xl bg-surface-container border border-outline-variant space-y-3">
+<div class="flex items-center justify-between">
+<span class="text-label-md font-label-md text-on-surface font-semibold flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[16px]" data-icon="document_scanner">document_scanner</span>
+<span class="">Semantic OCR Stream</span>
+</span>
+<span class="text-label-sm font-label-sm font-code-sm text-tertiary">CONF: 98.9%</span>
+</div>
+<!-- Bounding Box Preview Simulation -->
+<div class="relative w-full h-36 rounded-lg bg-surface-container-lowest border border-outline-variant overflow-hidden group">
+<img class="w-full h-full object-cover opacity-60" data-alt="A highly detailed clean digital screenshot of a student performance grading dashboard and data table showing numeric question stats on dark mode background with sharp data columns." src="https://lh3.googleusercontent.com/aida-public/AB6AXuApLoX9U_WDrRc57QGqq-ZXjKOOJQ5Nnzd67X9lQtNJON4RRQdQ9h7Q2Xx_dldGMAd94yERsrAfDNr3G02Msy7M2mVXS3xjlfwI2L1-T6TygkrDyxk3hua9XgQzUHxzbISw-T1DzXMDKRmyFixVyGl4dyy4re6EvF1q3-h8nWglG4U7XxlCfYMk9f3P19demG-2OtccELU-FUcOGBimql556XUvMFvMECuycuJpHZxfkKQMN9HXDrup">
+<!-- Electric Blue Bounding Box Highlight Overlay -->
+<div class="absolute top-8 left-10 w-44 h-14 border-2 border-primary bg-primary/20 rounded shadow-[0_0_12px_rgba(0,120,212,0.6)] flex items-start justify-end p-1">
+<span class="text-[9px] font-code-sm font-bold bg-primary text-on-primary px-1 rounded">BBOX #4</span>
+</div>
+<!-- Secondary subtle box -->
+<div class="absolute bottom-3 right-6 w-28 h-8 border border-secondary/60 bg-secondary/10 rounded"></div>
+</div>
+<!-- Raw OCR Terminal Snippet -->
+<div class="bg-surface-container-lowest p-2.5 rounded-lg border border-outline-variant font-code-sm text-[11px] leading-relaxed text-on-surface-variant overflow-x-auto">
+<div class="text-primary font-medium">[00:01:24] BoundingBox [x:142, y:88, w:420, h:65]</div>
+<div class="text-on-surface mt-1">TEXT: 'Student Performance Summary: Saajan K. - Total Solved Questions: 217 | Accuracy: 94.2% | Verified: True'</div>
+</div>
+</div>
+<!-- Pipeline Execution Steps Accordion / Card -->
+
+</aside>
+</main>
+
+<script>
+  const chatInput = document.getElementById('chatInput');
+  const sendButton = document.getElementById('sendButton');
+  const chatFeed = document.getElementById('chatFeed');
+  const topMatchText = document.getElementById('topMatchText');
+  const l2Distance = document.getElementById('l2Distance');
+  const ocrContextBox = document.getElementById('ocrContextBox');
+
+  function appendUserMessage(text) {
+    const timeString = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    const msgHTML = `
+      <div class="flex items-start justify-end gap-3 max-w-2xl ml-auto">
+        <div class="flex flex-col items-end">
+          <div class="bg-surface-container-high border border-outline-variant text-on-surface px-4 py-3 rounded-2xl rounded-tr-xs shadow-sm">
+            <p class="text-body-lg font-body-lg">${text}</p>
+          </div>
+          <span class="text-label-sm font-label-sm text-on-surface-variant mt-1.5 mr-1">${timeString}</span>
+        </div>
+        <div class="w-8 h-8 rounded-full bg-surface-container border border-outline-variant flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-primary text-[18px]">account_circle</span>
+        </div>
+      </div>
+    `;
+    chatFeed.insertAdjacentHTML('beforeend', msgHTML);
+    chatFeed.scrollTop = chatFeed.scrollHeight;
+  }
+
+  function appendAIMessage(data) {
+    const msgHTML = `
+      <div class="flex items-start gap-3.5 max-w-3xl mr-auto">
+        <div class="w-9 h-9 rounded-xl ai-badge-gradient custom-gradient-glow flex items-center justify-center shrink-0 mt-1">
+          <span class="material-symbols-outlined text-white text-[19px]">smart_toy</span>
+        </div>
+        <div class="flex flex-col flex-1">
+          <div class="flex items-center gap-2.5 mb-2">
+            <span class="text-label-md font-label-md text-on-surface font-semibold">gpt-5-mini Agent</span>
+            <span class="text-outline text-label-sm font-label-sm">•</span>
+            <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-secondary-container/30 text-secondary border border-secondary-container/60 text-label-sm font-label-sm font-code-sm">
+              <span class="material-symbols-outlined text-[13px]">radar</span>
+              <span>RAG Grounded</span>
+            </div>
+          </div>
+          <div class="bg-surface-container-low border border-outline-variant rounded-2xl rounded-tl-xs p-5 shadow-sm space-y-4">
+            <div class="p-3.5 rounded-xl bg-surface-container border-l-4 border-primary border-t border-r border-b border-outline-variant/60">
+              <p class="text-body-md font-body-md text-on-surface whitespace-pre-wrap">${data.answer}</p>
+            </div>
+            <div class="pt-1">
+              <div class="inline-flex items-center gap-2.5 p-1.5 pr-3 rounded-lg bg-surface-variant/50 border border-outline-variant cursor-pointer group">
+                <div class="w-7 h-7 rounded bg-surface-container-high border border-outline-variant flex items-center justify-center text-primary">
+                  <span class="material-symbols-outlined text-[16px]">attach_file</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-label-md font-label-md text-primary">Source: ${data.source}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    chatFeed.insertAdjacentHTML('beforeend', msgHTML);
+    chatFeed.scrollTop = chatFeed.scrollHeight;
+  }
+
+  async function handleSend() {
+    const query = chatInput.value.trim();
+    if (!query) return;
+    if (!selectedFilename) {
+      alert('Please select an image from the sidebar first.');
+      return;
+    }
+    
+    appendUserMessage(query);
+    chatInput.value = '';
+    
+    // Add a loading indicator in sidebar
+    topMatchText.textContent = "Top Match: Searching...";
+    l2Distance.textContent = "...";
+    ocrContextBox.innerHTML = '<p class="text-on-surface-variant animate-pulse">Running retrieval...</p>';
+    
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query: query, filename: selectedFilename })
+      });
+      const data = await response.json();
+      
+      appendAIMessage(data);
+      
+      // Update sidebar
+      topMatchText.textContent = `Top Match: ${data.source}`;
+      l2Distance.textContent = data.distance !== null ? data.distance : "N/A";
+      ocrContextBox.textContent = data.ocr_context || "No context found.";
+      
+    } catch (e) {
+      appendAIMessage({answer: "Error communicating with the backend API.", source: "N/A"});
+      topMatchText.textContent = "Top Match: Error";
+      l2Distance.textContent = "Error";
+      ocrContextBox.textContent = "Failed to fetch context.";
+    }
+  }
+
+  sendButton.addEventListener('click', handleSend);
+  chatInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleSend();
+  });
+
+  // =========================================================================
+  // Media Upload Logic
+  // =========================================================================
+  const dropZone = document.getElementById('dropZone');
+  const imageUpload = document.getElementById('imageUpload');
+  const indexedMediaList = document.getElementById('indexedMediaList');
+  const indexedMediaCount = document.getElementById('indexedMediaCount');
+  const uploadLabel = document.getElementById('uploadLabel');
+  const uploadSubLabel = document.getElementById('uploadSubLabel');
+  const uploadIcon = document.getElementById('uploadIcon');
+  let uploadCount = 0;
+  let selectedFilename = null;
+
+  // Click to browse
+  dropZone.addEventListener('click', () => imageUpload.click());
+
+  // Drag-and-drop handlers
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('border-primary', 'bg-surface-container');
+  });
+  dropZone.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-primary', 'bg-surface-container');
+  });
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-primary', 'bg-surface-container');
+    if (e.dataTransfer.files.length > 0) {
+      handleUpload(e.dataTransfer.files[0]);
+    }
+  });
+
+  // File input change handler
+  imageUpload.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+      handleUpload(e.target.files[0]);
+      e.target.value = ''; // reset so same file can be re-uploaded
+    }
+  });
+
+  function setUploadLoading(filename) {
+    uploadIcon.textContent = 'hourglass_top';
+    uploadLabel.textContent = `Ingesting ${filename}...`;
+    uploadSubLabel.textContent = 'Running Azure AI Vision + ChromaDB pipeline';
+    dropZone.style.pointerEvents = 'none';
+  }
+
+  function resetUploadZone() {
+    uploadIcon.textContent = 'cloud_upload';
+    uploadLabel.textContent = 'Ingest Media to ChromaDB';
+    uploadSubLabel.textContent = 'Drop PNG, JPG or click to browse';
+    dropZone.style.pointerEvents = 'auto';
+  }
+
+  function selectMediaItem(el, filename) {
+    // Deselect previous
+    indexedMediaList.querySelectorAll('[data-media-item]').forEach(item => {
+      item.classList.remove('bg-surface-variant/70', 'border-primary/40');
+      item.classList.add('border-transparent');
+    });
+    // Select new
+    el.classList.remove('border-transparent');
+    el.classList.add('bg-surface-variant/70', 'border-primary/40');
+    selectedFilename = filename;
+  }
+
+  function appendMediaItem(filename) {
+    uploadCount++;
+    indexedMediaCount.textContent = `INDEXED MEDIA (${uploadCount})`;
+    const itemEl = document.createElement('div');
+    itemEl.setAttribute('data-media-item', filename);
+    itemEl.className = 'p-2.5 rounded-lg hover:bg-surface-variant/40 border border-transparent hover:border-outline-variant/60 flex items-center justify-between group cursor-pointer transition-colors';
+    itemEl.innerHTML = `
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center shrink-0 text-on-surface-variant group-hover:text-primary">
+            <span class="material-symbols-outlined">image</span>
+          </div>
+          <div class="truncate">
+            <p class="text-label-md font-label-md text-on-surface font-medium truncate">${filename}</p>
+            <p class="text-body-sm font-body-sm text-on-surface-variant font-code-sm">Just uploaded</p>
+          </div>
+        </div>
+        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-tertiary-container/30 border border-tertiary-container/60 text-tertiary text-label-sm font-label-sm shrink-0">
+          <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+          <span>Indexed</span>
+        </span>
+    `;
+    itemEl.addEventListener('click', () => selectMediaItem(itemEl, filename));
+    indexedMediaList.appendChild(itemEl);
+
+    // Auto-select the newly uploaded item
+    selectMediaItem(itemEl, filename);
+  }
+
+  async function handleUpload(file) {
+    setUploadLoading(file.name);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        appendMediaItem(data.filename);
+      } else {
+        alert(`Upload failed: ${data.detail || 'Unknown error'}`);
+      }
+    } catch (e) {
+      alert('Upload failed: could not reach the server.');
+    } finally {
+      resetUploadZone();
+    }
+  }
+</script>
+
+</body></html>
