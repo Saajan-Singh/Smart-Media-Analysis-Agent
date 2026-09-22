@@ -6,6 +6,7 @@ queries against indexed image data using the same all-MiniLM-L6-v2 model.
 """
 
 import os
+import json
 import chromadb
 from chromadb.utils import embedding_functions
 from dotenv import load_dotenv
@@ -136,7 +137,7 @@ def generate_answer(query: str, search_results: list[dict]) -> str:
         context += f"--- Source {rank}: {match['source_file']} ---\n"
         context += f"{match['snippet']}\n\n"
 
-    system_prompt = "You are a Smart Media Analysis Agent. Answer the user's question using ONLY the provided OCR text and visual tags. Always state the source file you found the answer in."
+    system_prompt = "You are a Smart Media Analysis Agent. Answer the user's question using ONLY the provided OCR text and visual tags. Do NOT append the source file name, file path, or 'Source:' citations to your response. Provide ONLY the direct, natural answer to the user's question."
 
     user_prompt = f"Context:\n{context}\n\nUser Question:\n{query}"
     messages = [
@@ -157,6 +158,58 @@ def generate_answer(query: str, search_results: list[dict]) -> str:
 # ---------------------------------------------------------------------------
 # Full RAG Pipeline 
 # ---------------------------------------------------------------------------
+
+def generate_moderation_report(filename: str) -> dict:
+    """Generate a content moderation report for a specific image using the LLM."""
+    if not USE_AZURE and not llm_client:
+        return {"categories": ["error"], "risk_score": 0, "reasoning": "LLM client not configured."}
+    
+    # Fetch the document from ChromaDB directly
+    full_path = os.path.join(MEDIA_DIR, filename)
+    try:
+        results = _collection.get(where={"source_file": full_path})
+    except Exception as e:
+        return {"categories": ["error"], "risk_score": 0, "reasoning": f"DB Error: {str(e)}"}
+        
+    if not results or not results.get("documents") or len(results["documents"]) == 0:
+        return {"categories": ["not_found"], "risk_score": 0, "reasoning": "No OCR data found for this image. It may not be indexed yet."}
+        
+    document = results["documents"][0]
+    
+    system_prompt = """You are an automated Content Moderation API. 
+Analyze the provided OCR text and visual descriptions.
+You MUST respond with ONLY a valid JSON object matching this schema:
+{
+  "categories": ["tag1", "tag2"],
+  "risk_score": integer between 0 and 100,
+  "reasoning": "A brief explanation of why this risk score was given."
+}
+
+For the 'categories' field, provide a single, meaningful, descriptive noun that represents the actual visual content or theme of the image (e.g., 'Transportation', 'Architecture', 'Meme', 'Dashboard', 'Nature', 'Document'). STRICTLY DO NOT use moderation-related terms, risk statuses, or adjectives like 'Benign', 'Safe', 'Harmless', 'Warning', or 'Clear' as the category name."""
+
+    user_prompt = f"Image Data:\n{document}"
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt}
+    ]
+
+    try:
+        response = llm_client.chat.completions.create(
+            model=llm_model,
+            messages=messages,
+            temperature=1,
+            response_format={"type": "json_object"}
+        )
+        content = response.choices[0].message.content.strip()
+        # Remove any markdown JSON formatting if present
+        if content.startswith("```json"):
+            content = content[7:]
+        if content.endswith("```"):
+            content = content[:-3]
+        
+        return json.loads(content.strip())
+    except Exception as e:
+        return {"categories": ["Error"], "risk_score": 0, "reasoning": f"Backend API Error: {str(e)}"}
 
 def query_pipeline(user_query: str, target_filename: str = None) -> dict:
     """Executes the full RAG pipeline (search + generation) and returns a structured response."""

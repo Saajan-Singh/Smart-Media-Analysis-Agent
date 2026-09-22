@@ -88,6 +88,5 @@ python -m src.search_agent
 ```
 
 ## 7. Future Development Scope
-* **OpenCV Integration:** Expanding the ingestion pipeline to process `.mp4` video files by extracting frames at specific intervals and routing them through the Azure Vision logic.
 * **Generative LLM Synthesis:** Upgrading `search_agent.py` to pass the retrieved ChromaDB context into a Local or Cloud LLM to generate conversational, human-like answers rather than just returning the raw data match.
 * **Cloud Re-Migration:** Swapping ChromaDB back to Azure AI Search once MFA tenant restrictions are resolved.

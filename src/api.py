@@ -4,7 +4,7 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from src.search_agent import query_pipeline
+from src.search_agent import query_pipeline, generate_moderation_report
 from src.pipeline import index_image
 from src import PROJECT_ROOT, MEDIA_DIR
 
@@ -20,9 +20,13 @@ class QueryRequest(BaseModel):
 def chat_endpoint(req: QueryRequest):
     return query_pipeline(req.query, req.filename)
 
+@app.get("/api/moderation_report/{filename}")
+def moderation_report_endpoint(filename: str):
+    return generate_moderation_report(filename)
+
 @app.post("/api/upload")
 async def upload_endpoint(file: UploadFile = File(...)):
-    """Save an uploaded image to media/ and run the ingestion pipeline on it."""
+    """Save an uploaded media file to media/ and run the ingestion pipeline on it."""
     os.makedirs(MEDIA_DIR, exist_ok=True)
     save_path = os.path.join(MEDIA_DIR, file.filename)
 
@@ -30,10 +34,22 @@ async def upload_endpoint(file: UploadFile = File(...)):
         shutil.copyfileobj(file.file, f)
 
     try:
+        # Assume it's an image
         index_image(save_path)
-        return {"status": "success", "filename": file.filename}
+        category = "Uncategorized"
+        try:
+            report = generate_moderation_report(file.filename)
+            if report and report.get("categories"):
+                category = report["categories"][0].strip().title()
+        except Exception as e:
+            print(f"Error determining category: {e}")
+            
+        return {
+            "filename": file.filename,
+            "primary_category": category
+        }
     except Exception as e:
-        return {"status": "error", "filename": file.filename, "detail": str(e)}
+        return {"filename": file.filename, "primary_category": "Error"}
 
 app.mount("/static", StaticFiles(directory=design_dir), name="static")
 
