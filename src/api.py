@@ -51,6 +51,7 @@ async def upload_endpoint(file: UploadFile = File(...)):
     except Exception as e:
         return {"filename": file.filename, "primary_category": "Error"}
 
+app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 app.mount("/static", StaticFiles(directory=design_dir), name="static")
 
 @app.get("/")

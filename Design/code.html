@@ -273,6 +273,7 @@
   </span>
 </div>
 
+
 <!-- Generated Categories -->
 <div class="p-3.5 rounded-xl bg-surface-container border border-outline-variant space-y-3">
   <div class="flex items-center justify-between">
@@ -311,6 +312,26 @@
   <div id="reasoningTextContainer" class="bg-surface-container-lowest p-2 rounded-lg border border-outline-variant text-[13px] leading-relaxed text-on-surface space-y-2 flex-1 overflow-y-auto">
     <p class="text-on-surface-variant">Select an image to view the AI's reasoning.</p>
   </div>
+</div>
+
+<!-- Active Image Preview -->
+<div class="p-3.5 rounded-xl bg-surface-container border border-outline-variant space-y-3">
+  <div class="flex items-center justify-between">
+    <span class="text-label-md font-label-md text-on-surface font-semibold flex items-center gap-1.5">
+      <span class="material-symbols-outlined text-primary text-[16px]" data-icon="image">image</span>
+      <span>Active Image Preview</span>
+    </span>
+  </div>
+  <div class="relative w-full rounded-lg overflow-hidden border border-outline-variant/30 bg-surface-container-lowest">
+    <img id="preview-image" src="" alt="Preview" class="w-full h-auto object-cover hidden">
+    <div class="absolute bottom-0 left-0 w-full bg-black/70 backdrop-blur-sm p-2 text-white text-[11px] font-code-sm truncate">
+      PREVIEWING: <span id="preview-filename-label" class="font-semibold"></span>
+    </div>
+  </div>
+  <a id="btn-open-full-size" href="#" target="_blank" class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-surface-variant hover:bg-surface-variant/80 text-on-surface text-label-sm font-label-sm font-semibold transition-colors border border-outline-variant/50">
+    <span class="material-symbols-outlined text-[16px]">open_in_new</span>
+    Open Full Size
+  </a>
 </div>
 
 </aside>
@@ -465,6 +486,23 @@
     dropZone.style.pointerEvents = 'auto';
   }
 
+  function updatePreview(filename) {
+      const imgUrl = '/media/' + filename;
+      const previewImg = document.getElementById('preview-image');
+      const label = document.getElementById('preview-filename-label');
+      const fullSizeBtn = document.getElementById('btn-open-full-size');
+      
+      // Update image source and make it visible
+      previewImg.src = imgUrl;
+      previewImg.classList.remove('hidden');
+      
+      // Update text and button
+      label.innerText = filename;
+      fullSizeBtn.href = imgUrl;
+      
+      console.log('Preview updated to: ' + filename);
+  }
+
   function selectMediaItem(el, filename) {
     // Deselect previous
     indexedMediaList.querySelectorAll('[data-media-item]').forEach(item => {
@@ -476,6 +514,7 @@
     el.classList.add('bg-surface-variant/70', 'border-primary/40');
     selectedFilename = filename;
     
+    updatePreview(filename);
     fetchModerationReport(filename);
   }
 
