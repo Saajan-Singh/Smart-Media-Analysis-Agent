@@ -148,8 +148,7 @@ def generate_answer(query: str, search_results: list[dict]) -> str:
     try:
         response = llm_client.chat.completions.create(
             model=llm_model,
-            messages=messages,
-            temperature=1
+            messages=messages
         )
         return response.choices[0].message.content
     except Exception as e:
@@ -176,7 +175,9 @@ def generate_moderation_report(filename: str) -> dict:
         
     document = results["documents"][0]
     
-    system_prompt = """You are an automated Content Moderation API. 
+    system_prompt = """You are a strict, literal, deterministic content moderation engine. You must evaluate the provided image captions exactly as they are written. DO NOT invent backstories, assume context, or be creative. If the captions describe aggressive actions (yelling, pointing, hitting), you must classify it as violence or conflict. Never assume close proximity means affection unless explicitly stated by the captions.
+
+You are an automated Content Moderation API. 
 Analyze the provided OCR text and visual descriptions.
 You MUST respond with ONLY a valid JSON object matching this schema:
 {
@@ -185,7 +186,9 @@ You MUST respond with ONLY a valid JSON object matching this schema:
   "reasoning": "A brief explanation of why this risk score was given."
 }
 
-For the 'categories' field, provide a single, meaningful, descriptive noun that represents the actual visual content or theme of the image (e.g., 'Transportation', 'Architecture', 'Meme', 'Dashboard', 'Nature', 'Document'). STRICTLY DO NOT use moderation-related terms, risk statuses, or adjectives like 'Benign', 'Safe', 'Harmless', 'Warning', or 'Clear' as the category name."""
+For the 'categories' field, provide a single, meaningful, descriptive noun that represents the actual visual content or theme of the image (e.g., 'Transportation', 'Architecture', 'Meme', 'Dashboard', 'Nature', 'Document'). STRICTLY DO NOT use moderation-related terms, risk statuses, or adjectives like 'Benign', 'Safe', 'Harmless', 'Warning', or 'Clear' as the category name.
+
+Carefully analyze the visual captions for signs of aggressive body language (e.g., yelling, shouting, pointing fingers, angry expressions). Do not assume close-proximity interactions are affectionate. If the captions indicate arguing, hostility, or fighting, strictly categorize this as 'Conflict' or 'Aggression' and elevate the risk score accordingly based on the severity of the depicted hostility."""
 
     user_prompt = f"Image Data:\n{document}"
     messages = [
@@ -197,7 +200,6 @@ For the 'categories' field, provide a single, meaningful, descriptive noun that 
         response = llm_client.chat.completions.create(
             model=llm_model,
             messages=messages,
-            temperature=1,
             response_format={"type": "json_object"}
         )
         content = response.choices[0].message.content.strip()

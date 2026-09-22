@@ -42,18 +42,25 @@ _BASE_FEATURES = [VisualFeatures.TAGS, VisualFeatures.READ]
 
 
 def _request_features_with_caption_fallback(image_data: bytes) -> object:
-    """Try TAGS + READ + CAPTION first; fall back to TAGS + READ only."""
+    """Try TAGS + READ + CAPTION + DENSE_CAPTIONS first, then CAPTION, then fall back to TAGS + READ only."""
     try:
         return _client.analyze(
             image_data=image_data,
-            visual_features=[VisualFeatures.CAPTION] + _BASE_FEATURES,
+            visual_features=[VisualFeatures.CAPTION, VisualFeatures.DENSE_CAPTIONS] + _BASE_FEATURES,
         )
     except Exception:
-        # Region does not support Caption -- retry without it
-        return _client.analyze(
-            image_data=image_data,
-            visual_features=_BASE_FEATURES,
-        )
+        try:
+            # Region does not support Dense Captions -- try standard Caption
+            return _client.analyze(
+                image_data=image_data,
+                visual_features=[VisualFeatures.CAPTION] + _BASE_FEATURES,
+            )
+        except Exception:
+            # Region does not support Caption or Dense Captions -- retry without them
+            return _client.analyze(
+                image_data=image_data,
+                visual_features=_BASE_FEATURES,
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -95,6 +102,12 @@ def analyze_image(image_path: str) -> dict:
         caption_text = result.caption.text
         caption_confidence = result.caption.confidence
 
+    # --- Parse dense captions ---------------------------------------------
+    dense_captions: list[str] = []
+    if hasattr(result, "dense_captions") and result.dense_captions is not None:
+        for caption in result.dense_captions.list:
+            dense_captions.append(caption.text)
+
     # --- Parse tags -------------------------------------------------------
     tags: list[str] = []
     if result.tags is not None:
@@ -115,6 +128,10 @@ def analyze_image(image_path: str) -> dict:
             f"**Visual Caption:** {caption_text} "
             f"(confidence: {caption_confidence * 100:.1f}%)"
         )
+
+    if dense_captions:
+        joined = "\n".join(f"- {dc}" for dc in dense_captions)
+        sections.append(f"**Dense Captions:**\n{joined}")
 
     if tags:
         sections.append(f"**Visual Tags:** {', '.join(tags)}")
