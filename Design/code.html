@@ -649,14 +649,51 @@
 
   async function handleUpload(file) {
     setUploadLoading(file.name);
-    const formData = new FormData();
-    formData.append('file', file);
-
+    
     try {
+      if (file.type.startsWith('image/')) {
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        await new Promise(resolve => { img.onload = resolve; });
+        
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const max = 1920;
+        
+        if (width > max || height > max) {
+            if (width > height) {
+                height = Math.round((height * max) / width);
+                width = max;
+            } else {
+                width = Math.round((width * max) / height);
+                height = max;
+            }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8));
+        file = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", { type: "image/jpeg" });
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+
       const res = await fetch('/api/upload', {
         method: 'POST',
         body: formData
       });
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Upload error:", res.status, errorText);
+        throw new Error(`HTTP ${res.status}`);
+      }
+
       const data = await res.json();
       console.log("Upload result:", data);
       
@@ -666,7 +703,8 @@
         alert(`Upload failed: ${data.detail || 'Unknown error'}`);
       }
     } catch (e) {
-      alert('Upload failed: could not reach the server.');
+      console.error(e);
+      alert('Upload failed: could not reach the server or invalid response.');
     } finally {
       resetUploadZone();
     }
