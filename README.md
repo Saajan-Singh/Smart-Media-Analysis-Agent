@@ -64,21 +64,6 @@ Azure AI Vision (OCR & Dense Captions extraction)
 
 Azure OpenAI (gpt-5-mini for contextual reasoning and conversational QA)
 
-📁 Project Structure
-
-medialens-moderation/
-├── Design/
-│   └── code.html          # Main frontend UI (HTML, Tailwind CSS, JS logic)
-├── src/
-│   ├── api.py             # FastAPI application and routing
-│   └── ai_services.py     # Azure Vision & OpenAI integration modules
-├── uploads/               # Local directory for raw media ingestion
-├── chroma_db/             # Local ChromaDB vector index storage
-├── .env                   # Environment variables (API keys and endpoints)
-├── requirements.txt       # Python dependencies
-└── README.md              # Project documentation
-
-
 💻 Getting Started
 
 Prerequisites
