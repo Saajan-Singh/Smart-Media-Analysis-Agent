@@ -258,10 +258,13 @@ def query_pipeline(user_query: str, target_filename: str = None, direct_context:
         for rank, match in enumerate(results, 1):
             ocr_context += f"--- Source {rank}: {match['source_file']} ---\n{match['snippet']}\n\n"
         
+    source_file = results[0]['source_file'] if results else target_filename or "Direct Upload"
+    distance = round(results[0]['distance'], 4) if results and results[0].get('distance') is not None else None
+
     return {
         "answer": answer,
-        "source": results[0]['source_file'],
-        "distance": round(results[0]['distance'], 4) if results[0].get('distance') is not None else None,
+        "source": source_file,
+        "distance": distance,
         "ocr_context": ocr_context.strip()
     }
 
