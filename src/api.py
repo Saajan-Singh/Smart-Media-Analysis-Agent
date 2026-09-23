@@ -27,7 +27,6 @@ def moderation_report_endpoint(filename: str):
 @app.post("/api/upload")
 async def upload_endpoint(file: UploadFile = File(...)):
     """Save an uploaded media file to media/ and run the ingestion pipeline on it."""
-    os.makedirs(MEDIA_DIR, exist_ok=True)
     save_path = os.path.join(MEDIA_DIR, file.filename)
 
     with open(save_path, "wb") as f:
@@ -63,6 +62,7 @@ def delete_media_endpoint(filename: str):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+os.makedirs(MEDIA_DIR, exist_ok=True)
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 app.mount("/static", StaticFiles(directory=design_dir), name="static")
 

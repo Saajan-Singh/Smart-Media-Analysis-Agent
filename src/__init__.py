@@ -10,6 +10,10 @@ import os
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Standard project directories
-MEDIA_DIR = os.path.join(PROJECT_ROOT, "media")
-DB_DIR = os.path.join(PROJECT_ROOT, "media_db")
+if os.environ.get("VERCEL"):
+    MEDIA_DIR = "/tmp/media"
+    DB_DIR = "/tmp/media_db"
+else:
+    MEDIA_DIR = os.path.join(PROJECT_ROOT, "media")
+    DB_DIR = os.path.join(PROJECT_ROOT, "media_db")
 ENV_PATH = os.path.join(PROJECT_ROOT, ".env")
