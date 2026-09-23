@@ -489,7 +489,11 @@
   }
 
   function updatePreview(filename) {
-      const imgUrl = (window.uploadedImageUrls && window.uploadedImageUrls[filename]) ? window.uploadedImageUrls[filename] : ('/api/media/' + filename);
+      if (!window.uploadedImageUrls || !window.uploadedImageUrls[filename]) {
+          console.warn("No client-side object URL found for " + filename);
+          return;
+      }
+      const imgUrl = window.uploadedImageUrls[filename];
       const previewImg = document.getElementById('preview-image');
       const label = document.getElementById('preview-filename-label');
       const fullSizeBtn = document.getElementById('btn-open-full-size');
@@ -655,6 +659,14 @@
 
   async function handleUpload(file) {
     setUploadLoading(file.name);
+    
+    // Instantly show preview
+    const tempUrl = URL.createObjectURL(file);
+    const previewImg = document.getElementById('preview-image');
+    previewImg.src = tempUrl;
+    previewImg.classList.remove('hidden');
+    document.getElementById('preview-filename-label').innerText = file.name;
+    document.getElementById('btn-open-full-size').href = tempUrl;
     
     try {
       if (file.type.startsWith('image/')) {
