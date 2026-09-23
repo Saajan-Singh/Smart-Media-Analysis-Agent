@@ -27,13 +27,14 @@ def moderation_report_endpoint(filename: str):
 
 @app.post("/api/upload")
 async def upload_endpoint(file: UploadFile = File(...)):
-    """Save an uploaded media file to media/ and run the ingestion pipeline on it."""
-    save_path = os.path.join(MEDIA_DIR, file.filename)
-
-    with open(save_path, "wb") as f:
-        shutil.copyfileobj(file.file, f)
+    """Save an uploaded media file to /tmp and run the ingestion pipeline on it."""
+    import tempfile
+    save_path = os.path.join(tempfile.gettempdir(), file.filename)
 
     try:
+        with open(save_path, "wb") as f:
+            shutil.copyfileobj(file.file, f)
+            
         # Assume it's an image
         data = index_image(save_path)
         unified_text = data.get("unified_text", "")
@@ -43,17 +44,12 @@ async def upload_endpoint(file: UploadFile = File(...)):
         reasoning = ""
         categories = []
         
-        try:
-            report = generate_moderation_report_direct(unified_text)
-            if report and report.get("categories"):
-                categories = report.get("categories", [])
-                category = categories[0].strip().title() if categories else "General Media"
-                risk_score = report.get("risk_score", 0)
-                reasoning = report.get("reasoning", "")
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            print(f"Error determining category: {e}")
+        report = generate_moderation_report_direct(unified_text)
+        if report and report.get("categories"):
+            categories = report.get("categories", [])
+            category = categories[0].strip().title() if categories else "General Media"
+            risk_score = report.get("risk_score", 0)
+            reasoning = report.get("reasoning", "")
             
         return {
             "status": "success",
