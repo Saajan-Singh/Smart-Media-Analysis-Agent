@@ -489,7 +489,7 @@
   }
 
   function updatePreview(filename) {
-      const imgUrl = '/api/media/' + filename;
+      const imgUrl = (window.uploadedImageUrls && window.uploadedImageUrls[filename]) ? window.uploadedImageUrls[filename] : ('/api/media/' + filename);
       const previewImg = document.getElementById('preview-image');
       const label = document.getElementById('preview-filename-label');
       const fullSizeBtn = document.getElementById('btn-open-full-size');
@@ -686,6 +686,7 @@
         file = new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", { type: "image/jpeg" });
       }
 
+      const objectUrl = URL.createObjectURL(file);
       const formData = new FormData();
       formData.append('file', file);
 
@@ -704,6 +705,9 @@
       console.log("Upload result:", data);
       
       if (data.status === 'success' || data.filename) {
+        window.uploadedImageUrls = window.uploadedImageUrls || {};
+        window.uploadedImageUrls[data.filename] = objectUrl;
+        
         window.activeImageContext = data;
         const category = data.category || 'General Media';
         renderMediaFolder(data.filename, category);
