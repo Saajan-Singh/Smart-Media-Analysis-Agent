@@ -74,6 +74,14 @@ def index_image(image_path: str, doc_id: str = None) -> dict:
     print(f"[pipeline] Indexed '{doc_id}' ({len(unified_text)} chars) -> {_COLLECTION_NAME}")
     return data
 
+def delete_image_from_index(filename: str):
+    """Delete an image's vector from ChromaDB based on its filename."""
+    doc_id = os.path.splitext(os.path.basename(filename))[0]
+    try:
+        _collection.delete(ids=[doc_id])
+        print(f"[pipeline] Deleted '{doc_id}' from '{_COLLECTION_NAME}'")
+    except Exception as exc:
+        print(f"[pipeline] Failed to delete '{doc_id}': {exc}")
 
 # ---------------------------------------------------------------------------
 # Batch ingestion -- process every image in media/ directory

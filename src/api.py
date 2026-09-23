@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from src.search_agent import query_pipeline, generate_moderation_report
-from src.pipeline import index_image
+from src.pipeline import index_image, delete_image_from_index
 from src import PROJECT_ROOT, MEDIA_DIR
 
 app = FastAPI(title="Smart Media Analysis API")
@@ -50,6 +50,18 @@ async def upload_endpoint(file: UploadFile = File(...)):
         }
     except Exception as e:
         return {"filename": file.filename, "primary_category": "Error"}
+
+@app.delete("/api/media/{filename}")
+def delete_media_endpoint(filename: str):
+    """Delete a media file from the filesystem and its vector from the database."""
+    file_path = os.path.join(MEDIA_DIR, filename)
+    try:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        delete_image_from_index(filename)
+        return {"status": "success", "message": f"Deleted {filename}"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 app.mount("/static", StaticFiles(directory=design_dir), name="static")
