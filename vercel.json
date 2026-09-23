@@ -1,14 +1,8 @@
 {
-  "name": "smart-media-analysis",
-  "version": 2,
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "api/index.py"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "Design/code.html"
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
     }
   ]
 }
