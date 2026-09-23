@@ -46,7 +46,11 @@ else:
 
 _COLLECTION_NAME = "image_text_analysis_azure"
 
-_chroma_client = chromadb.PersistentClient(path=DB_DIR)
+try:
+    _chroma_client = chromadb.PersistentClient(path=DB_DIR)
+except (AttributeError, Exception) as e:
+    print(f"[search_agent] PersistentClient unavailable ({e}), using EphemeralClient")
+    _chroma_client = chromadb.EphemeralClient()
 
 _embedding_fn = get_embedding_function()
 

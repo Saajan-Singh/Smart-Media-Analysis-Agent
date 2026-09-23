@@ -23,12 +23,13 @@ _endpoint = os.getenv("AZURE_VISION_ENDPOINT")
 _key = os.getenv("AZURE_VISION_KEY")
 
 if not _endpoint or not _key:
-    raise ValueError(
-        "Missing Azure credentials. "
-        "Ensure AZURE_VISION_ENDPOINT and AZURE_VISION_KEY are set in .env"
+    print(
+        "[Warning] Missing Azure Vision credentials. "
+        "Ensure AZURE_VISION_ENDPOINT and AZURE_VISION_KEY are set."
     )
-
-_client = ImageAnalysisClient(_endpoint, AzureKeyCredential(_key))
+    _client = None
+else:
+    _client = ImageAnalysisClient(_endpoint, AzureKeyCredential(_key))
 
 # ---------------------------------------------------------------------------
 # Determine which visual features are available in this Azure region.
@@ -87,6 +88,16 @@ def analyze_image(image_path: str) -> dict:
             "unified_text":  str          # Markdown-formatted string for indexing
         }
     """
+    if not _client:
+        return {
+            "source_file": image_path,
+            "caption": None,
+            "confidence": None,
+            "tags": [],
+            "ocr_lines": [],
+            "unified_text": "(Azure Vision client not configured)",
+        }
+
     if not os.path.isfile(image_path):
         raise FileNotFoundError(f"Image not found: {image_path}")
 
