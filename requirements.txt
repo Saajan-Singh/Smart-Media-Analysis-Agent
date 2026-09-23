@@ -1,11 +1,8 @@
 azure-ai-vision-imageanalysis
 azure-core
-chromadb
+chromadb-client
 
 python-dotenv
-opencv-python
 openai
-azure-identity
 fastapi
-uvicorn
 python-multipart

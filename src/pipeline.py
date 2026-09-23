@@ -12,27 +12,35 @@ import glob
 from src.image_analyzer import analyze_image
 from src import DB_DIR, MEDIA_DIR
 
-import chromadb
-from src.embedding import get_embedding_function
+try:
+    import chromadb
+    from src.embedding import get_embedding_function
+except ImportError:
+    chromadb = None
 
 # ---------------------------------------------------------------------------
-# ChromaDB setup -- persistent local storage
+# ChromaDB setup -- persistent local storage (with in-memory fallback)
 # ---------------------------------------------------------------------------
 
 _COLLECTION_NAME = "image_text_analysis_azure"
+_collection = None
 
 try:
-    _chroma_client = chromadb.PersistentClient(path=DB_DIR)
-except (AttributeError, Exception) as e:
-    print(f"[pipeline] PersistentClient unavailable ({e}), using EphemeralClient")
-    _chroma_client = chromadb.EphemeralClient()
+    if chromadb:
+        _chroma_client = chromadb.PersistentClient(path=DB_DIR)
+        _embedding_fn = get_embedding_function()
+        _collection = _chroma_client.get_or_create_collection(
+            name=_COLLECTION_NAME,
+            embedding_function=_embedding_fn,
+        )
+        print(f"[pipeline] Using ChromaDB PersistentClient at {DB_DIR}")
+except Exception as e:
+    print(f"[pipeline] ChromaDB PersistentClient unavailable ({e})")
 
-_embedding_fn = get_embedding_function()
-
-_collection = _chroma_client.get_or_create_collection(
-    name=_COLLECTION_NAME,
-    embedding_function=_embedding_fn,
-)
+if _collection is None:
+    from src.memory_store import InMemoryCollection
+    _collection = InMemoryCollection(name=_COLLECTION_NAME)
+    print(f"[pipeline] Using InMemoryCollection fallback")
 
 
 # ---------------------------------------------------------------------------

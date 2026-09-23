@@ -7,12 +7,15 @@ queries against indexed image data using the same all-MiniLM-L6-v2 model.
 
 import os
 import json
-import chromadb
-from src.embedding import get_embedding_function
 from dotenv import load_dotenv
 from openai import OpenAI
-from azure.identity import InteractiveBrowserCredential, get_bearer_token_provider
 from src import DB_DIR, ENV_PATH, MEDIA_DIR
+
+try:
+    import chromadb
+    from src.embedding import get_embedding_function
+except ImportError:
+    chromadb = None
 
 load_dotenv(dotenv_path=ENV_PATH)
 
@@ -41,23 +44,28 @@ else:
     llm_model = None
 
 # ---------------------------------------------------------------------------
-# ChromaDB connection -- must mirror pipeline.py settings exactly
+# ChromaDB connection (with in-memory fallback)
 # ---------------------------------------------------------------------------
 
 _COLLECTION_NAME = "image_text_analysis_azure"
+_collection = None
 
 try:
-    _chroma_client = chromadb.PersistentClient(path=DB_DIR)
-except (AttributeError, Exception) as e:
-    print(f"[search_agent] PersistentClient unavailable ({e}), using EphemeralClient")
-    _chroma_client = chromadb.EphemeralClient()
+    if chromadb:
+        _chroma_client = chromadb.PersistentClient(path=DB_DIR)
+        _embedding_fn = get_embedding_function()
+        _collection = _chroma_client.get_or_create_collection(
+            name=_COLLECTION_NAME,
+            embedding_function=_embedding_fn,
+        )
+        print(f"[search_agent] Using ChromaDB PersistentClient at {DB_DIR}")
+except Exception as e:
+    print(f"[search_agent] ChromaDB PersistentClient unavailable ({e})")
 
-_embedding_fn = get_embedding_function()
-
-_collection = _chroma_client.get_or_create_collection(
-    name=_COLLECTION_NAME,
-    embedding_function=_embedding_fn,
-)
+if _collection is None:
+    from src.memory_store import InMemoryCollection
+    _collection = InMemoryCollection(name=_COLLECTION_NAME)
+    print(f"[search_agent] Using InMemoryCollection fallback")
 
 
 # ---------------------------------------------------------------------------
