@@ -4,7 +4,7 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from src.search_agent import query_pipeline, generate_moderation_report
+from src.search_agent import query_pipeline, generate_moderation_report, generate_moderation_report_direct
 from src.pipeline import index_image, delete_image_from_index
 from src import PROJECT_ROOT, MEDIA_DIR
 
@@ -34,21 +34,47 @@ async def upload_endpoint(file: UploadFile = File(...)):
 
     try:
         # Assume it's an image
-        index_image(save_path)
-        category = "Uncategorized"
+        data = index_image(save_path)
+        unified_text = data.get("unified_text", "")
+        
+        category = "General Media"
+        risk_score = 0
+        reasoning = ""
+        categories = []
+        
         try:
-            report = generate_moderation_report(file.filename)
+            report = generate_moderation_report_direct(unified_text)
             if report and report.get("categories"):
-                category = report["categories"][0].strip().title()
+                categories = report.get("categories", [])
+                category = categories[0].strip().title() if categories else "General Media"
+                risk_score = report.get("risk_score", 0)
+                reasoning = report.get("reasoning", "")
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             print(f"Error determining category: {e}")
             
         return {
+            "status": "success",
             "filename": file.filename,
-            "primary_category": category
+            "category": category,
+            "categories": categories,
+            "risk_score": risk_score,
+            "reasoning": reasoning,
+            "ocr_text": "\n".join(data.get("ocr_lines", []))
         }
     except Exception as e:
-        return {"filename": file.filename, "primary_category": "Media Analysis Error"}
+        import traceback
+        traceback.print_exc()
+        return {
+            "status": "error",
+            "filename": file.filename,
+            "category": "Media Analysis Error",
+            "categories": ["Media Analysis Error"],
+            "risk_score": 0,
+            "reasoning": str(e),
+            "ocr_text": ""
+        }
 
 @app.delete("/api/media/{filename}")
 def delete_media_endpoint(filename: str):

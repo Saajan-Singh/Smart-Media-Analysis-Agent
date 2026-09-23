@@ -167,23 +167,14 @@ def generate_answer(query: str, search_results: list[dict]) -> str:
 # Full RAG Pipeline 
 # ---------------------------------------------------------------------------
 
-def generate_moderation_report(filename: str) -> dict:
-    """Generate a content moderation report for a specific image using the LLM."""
+def generate_moderation_report_direct(document: str) -> dict:
+    """Generate a content moderation report for a specific image using the LLM directly from text."""
     if not USE_AZURE and not llm_client:
         return {"categories": ["Media Analysis Error"], "risk_score": 0, "reasoning": "LLM client not configured."}
     
-    # Fetch the document from ChromaDB directly
-    full_path = os.path.join(MEDIA_DIR, filename)
-    try:
-        results = _collection.get(where={"source_file": full_path})
-    except Exception as e:
-        return {"categories": ["Media Analysis Error"], "risk_score": 0, "reasoning": f"DB Error: {str(e)}"}
-        
-    if not results or not results.get("documents") or len(results["documents"]) == 0:
-        return {"categories": ["General Media"], "risk_score": 0, "reasoning": "No OCR data found for this image. It may not be indexed yet."}
-        
-    document = results["documents"][0]
-    
+    if not document:
+         return {"categories": ["General Media"], "risk_score": 0, "reasoning": "No OCR data found for this image."}
+
     system_prompt = """You are a strict, literal, deterministic content moderation engine. You must evaluate the provided image captions exactly as they are written. DO NOT invent backstories, assume context, or be creative. If the captions describe aggressive actions (yelling, pointing, hitting), you must classify it as violence or conflict. Never assume close proximity means affection unless explicitly stated by the captions.
 
 You are an automated Content Moderation API. 
@@ -220,7 +211,26 @@ Carefully analyze the visual captions for signs of aggressive body language (e.g
         
         return json.loads(content.strip())
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return {"categories": ["Media Analysis Error"], "risk_score": 0, "reasoning": f"Backend API Error: {str(e)}"}
+
+def generate_moderation_report(filename: str) -> dict:
+    """Generate a content moderation report for a specific image using the LLM via ChromaDB lookup."""
+    # Fetch the document from ChromaDB directly
+    full_path = os.path.join(MEDIA_DIR, filename)
+    try:
+        results = _collection.get(where={"source_file": full_path})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"categories": ["Media Analysis Error"], "risk_score": 0, "reasoning": f"DB Error: {str(e)}"}
+        
+    if not results or not results.get("documents") or len(results["documents"]) == 0:
+        return {"categories": ["General Media"], "risk_score": 0, "reasoning": "No OCR data found for this image. It may not be indexed yet."}
+        
+    document = results["documents"][0]
+    return generate_moderation_report_direct(document)
 
 def query_pipeline(user_query: str, target_filename: str = None) -> dict:
     """Executes the full RAG pipeline (search + generation) and returns a structured response."""

@@ -68,19 +68,24 @@ def index_image(image_path: str, doc_id: str = None) -> dict:
     if doc_id is None:
         doc_id = os.path.splitext(os.path.basename(image_path))[0]
 
-    _collection.upsert(
-        ids=[doc_id],
-        documents=[unified_text],
-        metadatas=[
-            {
-                "source_file": data["source_file"],
-                "media_type": "image",
-                "character_count": len(unified_text),
-            }
-        ],
-    )
-
-    print(f"[pipeline] Indexed '{doc_id}' ({len(unified_text)} chars) -> {_COLLECTION_NAME}")
+    try:
+        if _collection is not None:
+            _collection.upsert(
+                ids=[doc_id],
+                documents=[unified_text],
+                metadatas=[
+                    {
+                        "source_file": data["source_file"],
+                        "media_type": "image",
+                        "character_count": len(unified_text),
+                    }
+                ],
+            )
+            print(f"[pipeline] Indexed '{doc_id}' ({len(unified_text)} chars) -> {_COLLECTION_NAME}")
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(f"[pipeline] Failed to index '{doc_id}' into ChromaDB: {e}")
     return data
 
 def delete_image_from_index(filename: str):

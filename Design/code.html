@@ -697,10 +697,15 @@
       const data = await res.json();
       console.log("Upload result:", data);
       
-      if (data.filename && data.primary_category) {
-        renderMediaFolder(data.filename, data.primary_category);
+      if (data.status === 'success' || data.filename) {
+        const category = data.category || 'General Media';
+        renderMediaFolder(data.filename, category);
+        
+        if (data.reasoning) {
+            console.log(`Analysis: [Risk: ${data.risk_score}] ${data.reasoning}`);
+        }
       } else {
-        alert(`Upload failed: ${data.detail || 'Unknown error'}`);
+        alert(`Upload failed: ${data.reasoning || data.detail || 'Unknown error'}`);
       }
     } catch (e) {
       console.error(e);
