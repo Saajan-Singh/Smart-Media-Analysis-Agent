@@ -1,4 +1,5 @@
 {
+  "name": "smart-media-analysis",
   "version": 2,
   "builds": [
     {

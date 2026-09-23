@@ -13,20 +13,17 @@ from src.image_analyzer import analyze_image
 from src import DB_DIR, MEDIA_DIR
 
 import chromadb
-from chromadb.utils import embedding_functions
+from src.embedding import get_embedding_function
 
 # ---------------------------------------------------------------------------
 # ChromaDB setup -- persistent local storage
 # ---------------------------------------------------------------------------
 
-_COLLECTION_NAME = "image_text_analysis"
-_MODEL_NAME = "all-MiniLM-L6-v2"
+_COLLECTION_NAME = "image_text_analysis_azure"
 
 _chroma_client = chromadb.PersistentClient(path=DB_DIR)
 
-_embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
-    model_name=_MODEL_NAME
-)
+_embedding_fn = get_embedding_function()
 
 _collection = _chroma_client.get_or_create_collection(
     name=_COLLECTION_NAME,

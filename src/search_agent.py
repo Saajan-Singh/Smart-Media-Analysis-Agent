@@ -8,7 +8,7 @@ queries against indexed image data using the same all-MiniLM-L6-v2 model.
 import os
 import json
 import chromadb
-from chromadb.utils import embedding_functions
+from src.embedding import get_embedding_function
 from dotenv import load_dotenv
 from openai import OpenAI
 from azure.identity import InteractiveBrowserCredential, get_bearer_token_provider
@@ -24,11 +24,11 @@ USE_AZURE = bool(os.getenv("AZURE_OPENAI_ENDPOINT"))
 
 if USE_AZURE:
     endpoint = os.getenv("AZURE_OPENAI_ENDPOINT", "").rstrip("/")
-    token_provider = get_bearer_token_provider(InteractiveBrowserCredential(), "https://ai.azure.com/.default")
+    api_key = os.getenv("AZURE_OPENAI_API_KEY", "")
     
     llm_client = OpenAI(
         base_url=f"{endpoint}/openai/v1/",
-        api_key=token_provider
+        api_key=api_key
     )
     llm_model = os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o-mini")
 elif os.getenv("OPENAI_API_KEY"):
@@ -44,14 +44,11 @@ else:
 # ChromaDB connection -- must mirror pipeline.py settings exactly
 # ---------------------------------------------------------------------------
 
-_COLLECTION_NAME = "image_text_analysis"
-_MODEL_NAME = "all-MiniLM-L6-v2"
+_COLLECTION_NAME = "image_text_analysis_azure"
 
 _chroma_client = chromadb.PersistentClient(path=DB_DIR)
 
-_embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
-    model_name=_MODEL_NAME
-)
+_embedding_fn = get_embedding_function()
 
 _collection = _chroma_client.get_or_create_collection(
     name=_COLLECTION_NAME,
