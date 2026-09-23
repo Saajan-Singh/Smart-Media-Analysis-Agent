@@ -1,6 +1,6 @@
 azure-ai-vision-imageanalysis
 azure-core
-chromadb
+chromadb-client
 sentence-transformers
 python-dotenv
 opencv-python
