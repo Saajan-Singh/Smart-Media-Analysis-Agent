@@ -15,10 +15,11 @@ design_dir = os.path.join(PROJECT_ROOT, "Design")
 class QueryRequest(BaseModel):
     query: str
     filename: str | None = None
+    context: dict | str | None = None
 
 @app.post("/api/chat")
 def chat_endpoint(req: QueryRequest):
-    return query_pipeline(req.query, req.filename)
+    return query_pipeline(req.query, req.filename, req.context)
 
 @app.get("/api/moderation_report/{filename}")
 def moderation_report_endpoint(filename: str):

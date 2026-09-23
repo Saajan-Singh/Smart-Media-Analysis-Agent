@@ -132,19 +132,21 @@ def search_images(query: str, top_k: int = 1, source_filter: str = None) -> list
 # Generative LLM Response
 # ---------------------------------------------------------------------------
 
-def generate_answer(query: str, search_results: list[dict]) -> str:
-    """Generate a conversational answer using the LLM based on retrieved context."""
+def generate_answer(query: str, search_results: list[dict], direct_context: dict | str | None = None) -> str:
+    """Generate a conversational answer using the LLM based on retrieved context or direct context."""
     if not USE_AZURE and not llm_client:
         return "LLM client not configured. Please set AZURE_OPENAI_API_KEY or OPENAI_API_KEY in .env"
     
-    if not search_results:
-        return "I couldn't find any relevant information to answer your question."
-
-    # Construct the context from the best matches
     context = ""
-    for rank, match in enumerate(search_results, 1):
-        context += f"--- Source {rank}: {match['source_file']} ---\n"
-        context += f"{match['snippet']}\n\n"
+    if direct_context:
+        context = f"--- Direct Upload Context ---\n{direct_context}\n\n"
+    elif not search_results:
+        return "I couldn't find any relevant information to answer your question."
+    else:
+        # Construct the context from the best matches
+        for rank, match in enumerate(search_results, 1):
+            context += f"--- Source {rank}: {match['source_file']} ---\n"
+            context += f"{match['snippet']}\n\n"
 
     system_prompt = "You are a Smart Media Analysis Agent. Answer the user's question using ONLY the provided OCR text and visual tags. Do NOT append the source file name, file path, or 'Source:' citations to your response. Provide ONLY the direct, natural answer to the user's question."
 
@@ -232,23 +234,29 @@ def generate_moderation_report(filename: str) -> dict:
     document = results["documents"][0]
     return generate_moderation_report_direct(document)
 
-def query_pipeline(user_query: str, target_filename: str = None) -> dict:
+def query_pipeline(user_query: str, target_filename: str = None, direct_context: dict | str | None = None) -> dict:
     """Executes the full RAG pipeline (search + generation) and returns a structured response."""
-    results = search_images(user_query, top_k=3, source_filter=target_filename)
+    results = []
     
-    if not results:
-        return {
-            "answer": "I couldn't find any relevant information to answer your question.",
-            "source": "None",
-            "distance": None,
-            "ocr_context": "No documents matched the query."
-        }
+    if not direct_context:
+        results = search_images(user_query, top_k=3, source_filter=target_filename)
+        
+        if not results:
+            return {
+                "answer": "I couldn't find any relevant information to answer your question.",
+                "source": "None",
+                "distance": None,
+                "ocr_context": "No documents matched the query."
+            }
     
-    answer = generate_answer(user_query, results)
+    answer = generate_answer(user_query, results, direct_context=direct_context)
     
     ocr_context = ""
-    for rank, match in enumerate(results, 1):
-        ocr_context += f"--- Source {rank}: {match['source_file']} ---\n{match['snippet']}\n\n"
+    if direct_context:
+        ocr_context = f"--- Direct Context ---\n{direct_context}\n\n"
+    else:
+        for rank, match in enumerate(results, 1):
+            ocr_context += f"--- Source {rank}: {match['source_file']} ---\n{match['snippet']}\n\n"
         
     return {
         "answer": answer,

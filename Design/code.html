@@ -419,7 +419,7 @@
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ query: query, filename: selectedFilename })
+        body: JSON.stringify({ query: query, filename: selectedFilename, context: window.activeImageContext })
       });
       const data = await response.json();
       
@@ -446,6 +446,7 @@
   const uploadIcon = document.getElementById('uploadIcon');
   let uploadCount = 0;
   let selectedFilename = null;
+  window.activeImageContext = null;
 
   // Click to browse
   dropZone.addEventListener('click', () => imageUpload.click());
@@ -698,6 +699,7 @@
       console.log("Upload result:", data);
       
       if (data.status === 'success' || data.filename) {
+        window.activeImageContext = data;
         const category = data.category || 'General Media';
         renderMediaFolder(data.filename, category);
         
