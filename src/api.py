@@ -48,7 +48,7 @@ async def upload_endpoint(file: UploadFile = File(...)):
             "primary_category": category
         }
     except Exception as e:
-        return {"filename": file.filename, "primary_category": "Error"}
+        return {"filename": file.filename, "primary_category": "Media Analysis Error"}
 
 @app.delete("/api/media/{filename}")
 def delete_media_endpoint(filename: str):

@@ -170,17 +170,17 @@ def generate_answer(query: str, search_results: list[dict]) -> str:
 def generate_moderation_report(filename: str) -> dict:
     """Generate a content moderation report for a specific image using the LLM."""
     if not USE_AZURE and not llm_client:
-        return {"categories": ["error"], "risk_score": 0, "reasoning": "LLM client not configured."}
+        return {"categories": ["Media Analysis Error"], "risk_score": 0, "reasoning": "LLM client not configured."}
     
     # Fetch the document from ChromaDB directly
     full_path = os.path.join(MEDIA_DIR, filename)
     try:
         results = _collection.get(where={"source_file": full_path})
     except Exception as e:
-        return {"categories": ["error"], "risk_score": 0, "reasoning": f"DB Error: {str(e)}"}
+        return {"categories": ["Media Analysis Error"], "risk_score": 0, "reasoning": f"DB Error: {str(e)}"}
         
     if not results or not results.get("documents") or len(results["documents"]) == 0:
-        return {"categories": ["not_found"], "risk_score": 0, "reasoning": "No OCR data found for this image. It may not be indexed yet."}
+        return {"categories": ["General Media"], "risk_score": 0, "reasoning": "No OCR data found for this image. It may not be indexed yet."}
         
     document = results["documents"][0]
     
@@ -220,7 +220,7 @@ Carefully analyze the visual captions for signs of aggressive body language (e.g
         
         return json.loads(content.strip())
     except Exception as e:
-        return {"categories": ["Error"], "risk_score": 0, "reasoning": f"Backend API Error: {str(e)}"}
+        return {"categories": ["Media Analysis Error"], "risk_score": 0, "reasoning": f"Backend API Error: {str(e)}"}
 
 def query_pipeline(user_query: str, target_filename: str = None) -> dict:
     """Executes the full RAG pipeline (search + generation) and returns a structured response."""
