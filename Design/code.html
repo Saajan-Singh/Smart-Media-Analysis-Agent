@@ -530,8 +530,13 @@
     if (statusBadge) statusBadge.innerHTML = '<span class="material-symbols-outlined text-[14px] animate-spin">refresh</span><span>Analyzing...</span>';
     
     try {
-      const response = await fetch(`/api/moderation_report/${encodeURIComponent(filename)}`);
-      const data = await response.json();
+      let data;
+      if (window.activeImageContext && window.activeImageContext.filename === filename) {
+        data = window.activeImageContext;
+      } else {
+        const response = await fetch(`/api/moderation_report/${encodeURIComponent(filename)}`);
+        data = await response.json();
+      }
 
       if (statusBadge) statusBadge.innerHTML = '<span class="material-symbols-outlined text-[14px] text-emerald-600">check_circle</span><span class="text-emerald-600">Complete</span>';
       
